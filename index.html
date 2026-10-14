@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MirageAI Dashboard</title>
+<style>
+body{margin:0;font-family:Calibri,Arial,sans-serif;background:#f5f8fc;color:#16233f}
+header{background:#0b1b3a;color:#fff;padding:16px 24px;border-bottom:4px solid #00a37a}
+h1{margin:0;font-size:26px}main{padding:20px 24px}
+.card{background:#fff;border:1px solid #e2e8f0;border-left:6px solid #00a37a;padding:14px 18px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.tag{display:inline-block;background:#5b3fe0;color:#fff;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold;margin:2px}
+.risk{float:right;font-weight:bold;font-size:20px;color:#e11d48}
+pre{background:#0b1b3a;color:#7CFFD4;padding:10px;overflow:auto;font-size:13px}
+</style></head><body>
+<header><h1>MirageAI | Live Attack Dashboard</h1></header>
+<main><div id="list">No attackers yet. Send a command to POST /api/shell.</div></main>
+<script>
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function load(){
+  const r=await fetch('/api/sessions');const data=await r.json();
+  if(!data.length)return;
+  document.getElementById('list').innerHTML=data.map(s=>`
+   <div class="card"><span class="risk">Risk ${s.profile.risk_score}</span>
+   <b>${esc(s.ip)}</b> via ${esc(s.channel)} | ${esc(s.profile.actor)} | ${s.events.length} events<br>
+   ${s.profile.techniques.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}
+   <pre>${s.events.slice(-6).map(e=>esc('$ '+e.input+'\n'+e.output)).join('\n')}</pre>
+   <small>Auto-defense: ${esc(s.block_rule||'n/a')}</small> |
+   <a href="/api/sessions/${esc(s.id)}/rules" target="_blank">View generated Sigma rule</a></div>`).join('');
+}
+load();setInterval(load,2000);
+</script></body></html>
